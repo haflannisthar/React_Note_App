@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { db, auth } from '../../firebaseConfig';
-import { collection, addDoc, query, where, getDocs, orderBy, Timestamp, deleteDoc,doc } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs, orderBy, Timestamp, deleteDoc, doc, updateDoc, getDoc } from "firebase/firestore";
 
 const initialState = {
     FormData: {
@@ -8,7 +8,10 @@ const initialState = {
         description: ''
     },
     noteList: [],
-    message : false
+    message: false,
+    currentNoteEditID: null,
+    dialogOpen: false,
+    editSuccess: false,
 };
 
 export const NoteSlice = createSlice({
@@ -68,17 +71,88 @@ export const NoteSlice = createSlice({
             state.noteList = state.noteList.filter(note => note.id !== currentNoteID);
 
         },
-        setMessage : (state,action) =>{
+       
+        setMessage: (state, action) => {
             console.log(action);
-            
+
             state.message = action.payload;
-        }
-        
+        },
+        setCurrentEditNoteID: (state, action) => {
+            console.log("current edit id  ", action.payload);
+            const { currentNoteID } = action.payload
+            state.currentNoteEditID = currentNoteID
+
+        },
+        removeCurrentNoteID: (state, action) => {
+            state.currentNoteEditID = null
+        },
+        handleEditNote: (state, action) => {
+            console.log("handle edit is called");
+            const user = auth.currentUser;
+
+            console.log(user?.uid);
+
+            if (!user) {
+                console.error("User is not authenticated!");
+                return;
+            }
+
+            const noteData = {
+                userId: user?.uid,
+                title: state.FormData.title,
+                description: state.FormData.description,
+                createdAt: Timestamp.now(),
+            };
+            console.log(state.currentNoteEditID);
+
+            console.log(noteData);
+
+
+            const docRef = doc(db, 'notes', state.currentNoteEditID)
+            try {
+                const docSnap = getDoc(docRef)
+
+                if (docSnap != null) {
+
+                    updateDoc(docRef, noteData)
+                    console.log("Document updated successfully!");
+                    state.editSuccess = true
+
+                } else {
+                    console.log("No such document exists!");
+
+                }
+
+
+            } catch (error) {
+                console.error("Error getting or updating document:", error);
+
+            }
+
+
+
+
+
+        },
+        changeEditSuccessStatus: (state) => {
+            state.editSuccess = false
+        },
+        openDialog: (state) => {
+            state.dialogOpen = true;
+        },
+        closeDialog: (state) => {
+            state.dialogOpen = false;
+        },
+
+
+
     }
 });
 
-export const { handleInputChange, handleAddNote,setMessage, setNotesOnInitialLoad, emptyTheArrayOnLogOut,handleNoteDelete } = NoteSlice.actions;
+export const { handleInputChange, setCurrentEditNoteID, handleAddNote, setMessage, handleEditNote, changeEditSuccessStatus,
+    setNotesOnInitialLoad, emptyTheArrayOnLogOut, handleNoteDelete, openDialog, closeDialog, removeCurrentNoteID, changeDeleteSuccessStatus } = NoteSlice.actions;
 export default NoteSlice.reducer;
+
 
 export const fetchNotesFromFirebase = () => async (dispatch) => {
     try {
@@ -120,12 +194,12 @@ export const deleteNoteFromFirestore = (currentNoteID) => async (dispatch) => {
         }
 
         const noteRef = doc(db, 'notes', currentNoteID);
-        
+
         await deleteDoc(noteRef);
         console.log('Note deleted successfully');
 
         dispatch(handleNoteDelete({ currentNoteID }));
-       dispatch(setMessage(true))
+        dispatch(setMessage(true))
         dispatch(fetchNotesFromFirebase());
 
     } catch (error) {
@@ -133,3 +207,10 @@ export const deleteNoteFromFirestore = (currentNoteID) => async (dispatch) => {
         console.error('Error deleting note: ', error);
     }
 };
+
+
+
+// export const UpdateFromFireBase=(currentUpdateNote)=>async (dispatch)=>{
+// console.log(currentUpdateNote);
+
+// }

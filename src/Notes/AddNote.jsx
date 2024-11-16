@@ -15,7 +15,7 @@ import {
 import { MdEdit } from "react-icons/md";
 import { MdDeleteOutline } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { deleteNoteFromFirestore, fetchNotesFromFirebase, handleNoteDelete, setMessage } from "../Store/Slices/NoteSlice";
+import { changeDeleteSuccessStatus, deleteNoteFromFirestore, fetchNotesFromFirebase, handleInputChange, handleNoteDelete, openDialog, setCurrentEditNoteID, setMessage } from "../Store/Slices/NoteSlice";
 
 
 
@@ -23,7 +23,11 @@ import { deleteNoteFromFirestore, fetchNotesFromFirebase, handleNoteDelete, setM
 function AddNote({ noteListItem }) {
 
   const { note } = useSelector(state => state);
-  const { message } = note;
+  const { deleteSuccess } = note;
+console.log(note);
+
+  console.log(deleteSuccess);
+  
 
 
 
@@ -49,21 +53,31 @@ function AddNote({ noteListItem }) {
     dispatch(deleteNoteFromFirestore(deleteNoteID));
 
 
-    setTimeout(() => {
-      console.log(message);
-      
-      setOpenDel(true)
 
-      // Auto-close the alert after 3 seconds
-      setTimeout(() => {
-        setOpenDel(false);
-      }, 3000);
-    }, 500);
-    
+  }
 
 
+ 
 
-    
+  function OnEditNote(getNote) {
+     console.log(getNote.id);
+     
+  
+    dispatch(setCurrentEditNoteID({
+      currentNoteID :getNote?.id
+    }))
+
+
+  
+
+    dispatch(handleInputChange({
+       title: getNote?.title,
+        description: getNote?.description
+    }))
+
+  dispatch(openDialog())
+
+
   }
 
   return (
@@ -73,7 +87,7 @@ function AddNote({ noteListItem }) {
 
 
       {
-        openDel && (
+         deleteSuccess && openDel && (
           <div className="bg-green-300 p-4 rounded fixed bottom-4 right-4 w-64 max-w-xs">
 <Typography color="green-800" className="mt-1 font-normal text-center">
 Note Deleted Successfully
@@ -125,7 +139,7 @@ Note Deleted Successfully
     </CardBody>
     
     <CardFooter className="pt-0 mt-auto">
-      <IconButton data-ripple-light="true"  className="me-2" variant="outlined" color="blue">
+      <IconButton data-ripple-light="true" onClick={()=>OnEditNote(noteListItem)}  className="me-2" variant="outlined" color="blue">
         <MdEdit />
       </IconButton>
       <IconButton color="red" variant="outlined" onClick={()=>handleOpen(noteListItem?.id)} 

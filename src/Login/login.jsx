@@ -17,6 +17,7 @@ import { AuthContext } from "../Context/Context";
 export function LoginForm() {
   const { loginFormData, setLoginFormData, loginWithFirebase, setLoading, setUser } = useContext(AuthContext);
   const [errorMessage, setErrorMessage] = useState("");
+
   const navigate = useNavigate();
 
   const handleLoginOnSubmit = async (event) => {
@@ -49,6 +50,11 @@ export function LoginForm() {
     }
   };
 
+
+  function handlePasswordReset() {
+    
+  }
+
   return (
     <div className="flex items-center justify-center h-screen bg-gray-900">
       <div className="absolute inset-0 z-0">
@@ -80,8 +86,20 @@ export function LoginForm() {
             setFormData={setLoginFormData}
             onSubmit={handleLoginOnSubmit}
           />
+           {/* <Button variant="text">text</Button> */}
+           <Typography
+                  as="button"
+                  href=""
+                  onClick={handlePasswordReset()}
+                 color="blue-gray" 
+                  className="font-medium !text-gray-500 text-center transition-colors hover:!text-gray-900"
+                >
+                 Forget Password ?
+                </Typography>
         </Card>
       </div>
+
+      
     </div>
   );
 }

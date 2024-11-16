@@ -17,7 +17,7 @@ import AddNote from "../Notes/AddNote";
 import { useDispatch, useSelector } from "react-redux";
 import Lottie from "lottie-react";
 import note_animation from '../assets/No_Note.json';
-import { fetchNotesFromFirebase, handleAddNote, handleInputChange, emptyTheArrayOnLogOut } from '../Store/Slices/NoteSlice';
+import { fetchNotesFromFirebase, handleAddNote, handleInputChange, emptyTheArrayOnLogOut ,setCurrentEditNoteID, closeDialog, openDialog, removeCurrentNoteID, handleEditNote, changeEditSuccessStatus } from '../Store/Slices/NoteSlice';
 import { AuthContext } from '../Context/Context';
 import Success from '../assets/Icons/Success';
 
@@ -28,10 +28,19 @@ export default function Profile() {
   const dispatch = useDispatch();
   const { note } = useSelector(state => state);
   const { noteList } = note;
+  const {dialogOpen,currentNoteEditID,editSuccess }=note;
 
+
+
+  
+ 
+
+
+function handleDialogOpen() {
+  dispatch(openDialog())
+}
 
   const { user, hangleLogOut } = useContext(AuthContext);
-  console.log(user?.displayName);
 
 
   const handleOpen = (value) => setSize(value);
@@ -39,6 +48,7 @@ export default function Profile() {
   function userLogOut() {
     hangleLogOut();
     dispatch(emptyTheArrayOnLogOut())
+
   }
 
   function onChangeInput(event) {
@@ -48,25 +58,31 @@ export default function Profile() {
   }
 
 
+
+
   useEffect(() => {
     dispatch(fetchNotesFromFirebase());  // Fetch notes when component mounts
   }, [dispatch]);
 
 
-  // function filterNote(event) {
-    
-  // }
 
   function handleOnSubmit(event) {
     event.preventDefault();
 
-    dispatch(handleAddNote());
+    if (currentNoteEditID==null) {
+      dispatch(handleAddNote());
+    }else{
+    dispatch(handleEditNote())
+    }
+
+   
     dispatch(handleInputChange({ title: '', description: '' }));
 
     dispatch(fetchNotesFromFirebase());
 
 
-    handleOpen(null);
+    // handleOpen(null);
+    handleDialogClose()
 
     setTimeout(() => {
       setOpen(true);
@@ -76,7 +92,25 @@ export default function Profile() {
         setOpen(false);
       }, 3000);
     }, 100);
+
+
+    if (editSuccess) {
+      dispatch(changeEditSuccessStatus())
+    }
   }
+
+  function handleDialogClose() {
+    dispatch(closeDialog());
+    if (currentNoteEditID!==null) {
+      dispatch(removeCurrentNoteID())
+     
+
+      dispatch(handleInputChange({ title: '', description: '' }));
+
+
+    }
+
+}
 
   return (
     <div className="pt-2 pb-2 h-screen">
@@ -91,7 +125,7 @@ export default function Profile() {
 
             </div>
             <div class="relative group">
-              <IconButton variant="text" onClick={() => handleOpen("lg")} className="hover:text-white">
+              <IconButton variant="text" onClick={handleDialogOpen} className="hover:text-white">
                 <PlusIcon className="h-4 w-4" />
               </IconButton>
 
@@ -133,7 +167,7 @@ export default function Profile() {
                 <Lottie animationData={note_animation} loop={true} />
               </div>
               <h1 className="mb-4">No Note Found!!</h1>
-              <Button onClick={() => handleOpen("lg")} variant="gradient">
+              <Button onClick={handleDialogOpen} variant="gradient">
                 Add New Note
               </Button>
             </div>
@@ -142,8 +176,15 @@ export default function Profile() {
       </div>
 
 
-      <Dialog open={size === "lg"} size={size || "md"} handler={handleOpen}>
-        <DialogHeader>Add New Note</DialogHeader>
+      <Dialog open={dialogOpen} size="lg" handler={handleDialogClose}>
+
+
+         {
+          currentNoteEditID===null ?<DialogHeader>Add New Note</DialogHeader>:<DialogHeader>Edit Note</DialogHeader>
+
+
+         }
+        {/* <DialogHeader>Add New Note</DialogHeader> */}
         <DialogBody>
           <form onSubmit={handleOnSubmit}>
             <div className="w-full mb-3">
@@ -168,11 +209,17 @@ export default function Profile() {
               />
             </div>
             <div className='flex justify-end w-full pt-2'>
-              <Button variant="text" color="red" onClick={() => handleOpen(null)} className="mr-1">
+              <Button variant="text" color="red" onClick={handleDialogClose} className="mr-1">
                 <span>Cancel</span>
               </Button>
               <Button type='Submit' variant="gradient" color="black">
-                <span>Add Note</span>
+                
+         {
+          currentNoteEditID===null ?<span>Add Note</span>:<span>Update Note</span>
+
+
+         }
+                {/* <span>Add Note</span> */}
               </Button>
             </div>
           </form>
@@ -181,19 +228,19 @@ export default function Profile() {
       </Dialog>
 
       {open && (
-        // <Alert
-        //   className="fixed bottom-4 right-4 max-w-screen-md" // Position alert on the screen
-        //   icon={<Success />}
-         
-        // >
-        //   <Typography variant="h5" color="white">Success</Typography>
-        //   <Typography color="white" className="mt-2 font-normal">Note Added Successfully</Typography>
-        // </Alert>
+       
 
 <div className="bg-green-300 p-4 rounded fixed bottom-4 right-4 w-64 max-w-xs">
-<Typography color="green-800" className="mt-1 font-normal text-center">
-Note Added Successfully
-</Typography>
+
+  {
+    editSuccess ? <Typography color="green-800" className="mt-1 font-normal text-center">
+    Note Updated Successfully
+    </Typography> : 
+    <Typography color="green-800" className="mt-1 font-normal text-center">
+    Note Added Successfully
+    </Typography>
+  }
+
 </div>
       )}
     </div>
