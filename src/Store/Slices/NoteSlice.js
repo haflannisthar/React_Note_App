@@ -15,7 +15,7 @@ const initialState = {
 };
 
 export const NoteSlice = createSlice({
-    name: 'blog',
+    name: 'note',
     initialState,
     reducers: {
         handleInputChange: (state, action) => {
